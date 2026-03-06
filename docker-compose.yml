@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  birdnet:
+    image: ghcr.io/patman4ever/birdwatch-pc:latest
+    container_name: birdwatch_birdnet
+    restart: unless-stopped
+    devices:
+      - /dev/snd  # Microfoon/geluidskaart toegang (via WSL2 audio doorstuur)
+    volumes:
+      - ./data/recordings:/data/recordings
+      - ./data/detections:/data/detections
+      - ./config:/config
+    environment:
+      - TZ=Europe/Amsterdam
+      - LATITUDE=51.9
+      - LONGITUDE=4.5
+      - OVERLAP=0
+      - SENSITIVITY=1.0
+      - MIN_CONFIDENCE=0.7
+    networks:
+      - birdwatch_net
+
+  dashboard:
+    image: ghcr.io/patman4ever/birdwatch-pc:latest
+    container_name: birdwatch_dashboard
+    restart: unless-stopped
+    command: ["python", "dashboard.py"]
+    ports:
+      - "7766:7766"
+    volumes:
+      - ./data/detections:/data/detections
+      - ./config:/config
+    environment:
+      - TZ=Europe/Amsterdam
+    depends_on:
+      - birdnet
+    networks:
+      - birdwatch_net
+
+networks:
+  birdwatch_net:
+    driver: bridge
+
+volumes:
+  recordings:
+  detections:
